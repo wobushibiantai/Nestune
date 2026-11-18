@@ -24,11 +24,11 @@ concurrency:
 jobs:
   build:
     if: inputs.platform != 'windows-arm64'
-    name: ${{ matrix.os == 'macos-15' && 'macOS universal' || matrix.os == 'ubuntu-22.04-arm' && 'Linux ARM64' || 'Linux x64' }}
+    name: ${{ matrix.os == 'macos-15-intel' && 'macOS universal' || matrix.os == 'ubuntu-22.04-arm' && 'Linux ARM64' || 'Linux x64' }}
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(inputs.platform == 'macos' && '["macos-15"]' || inputs.platform == 'linux-arm64' && '["ubuntu-22.04-arm"]' || inputs.platform == 'linux' && '["ubuntu-22.04","ubuntu-22.04-arm"]' || '["ubuntu-22.04","ubuntu-22.04-arm","macos-15"]') }}
+        os: ${{ fromJSON(inputs.platform == 'macos' && '["macos-15-intel"]' || inputs.platform == 'linux-arm64' && '["ubuntu-22.04-arm"]' || inputs.platform == 'linux' && '["ubuntu-22.04","ubuntu-22.04-arm"]' || '["ubuntu-22.04","ubuntu-22.04-arm","macos-15-intel"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     defaults:
