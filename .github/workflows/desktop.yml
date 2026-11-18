@@ -65,6 +65,15 @@ jobs:
           cache-on-failure: true
       - name: Install CLI
         run: npm ci --no-audit --no-fund
+      - name: Check native tray lifecycle
+        run: |
+          cargo test --locked --lib --manifest-path src-tauri/Cargo.toml
+          cargo build --locked --manifest-path src-tauri/Cargo.toml
+          if [[ '${{ runner.os }}' == 'Linux' ]]; then
+            dbus-run-session -- xvfb-run -a timeout 30s src-tauri/target/debug/nestune --tray-qa
+          else
+            python3 -c 'import subprocess; subprocess.run(["src-tauri/target/debug/nestune", "--tray-qa"], check=True, timeout=30)'
+          fi
       - name: Build
         run: npm run '${{ runner.os == 'macOS' && 'build:macos' || 'build:linux' }}'
         env:
@@ -99,15 +108,6 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist"
           hdiutil verify src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
-      - name: Check native tray lifecycle
-        run: |
-          cargo test --locked --lib --manifest-path src-tauri/Cargo.toml
-          cargo build --locked --manifest-path src-tauri/Cargo.toml
-          if [[ '${{ runner.os }}' == 'Linux' ]]; then
-            dbus-run-session -- xvfb-run -a timeout 30s src-tauri/target/debug/nestune --tray-qa
-          else
-            python3 -c 'import subprocess; subprocess.run(["src-tauri/target/debug/nestune", "--tray-qa"], check=True, timeout=30)'
-          fi
       - name: Collect packages
         id: packages
         run: |
