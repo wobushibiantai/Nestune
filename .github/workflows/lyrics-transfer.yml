@@ -1,0 +1,39 @@
+name: Transfer verified Linux lyric updates
+on:
+  push:
+    branches: [ci/lyrics-resize-transfer]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  transfer:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Nestune-1.2.9-Linux-${{ matrix.arch }}
+          run-id: 44288620319
+          github-token: ${{ github.token }}
+          path: packages
+      - name: Prepare verified release delta
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          (cd packages && sha256sum -c SHA256SUMS.txt)
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xdelta3
+          curl --fail --retry 2 --max-time 190 "https://nestune.0use.net:8443/downloads/files/Nestune-1.2.2-Linux-$ARCH.AppImage" -o base.AppImage
+          mkdir -p transfer
+          xdelta3 -e -s base.AppImage "packages/Nestune-1.2.9-Linux-$ARCH.AppImage" "transfer/Nestune-1.2.9-Linux-$ARCH.xdelta"
+          cp packages/*.deb packages/SHA256SUMS.txt transfer/
+          sha256sum base.AppImage > transfer/BASE-SHA256SUMS.txt
+          ls -lh transfer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nestune-1.2.9-Linux-transfer-${{ matrix.arch }}
+          path: transfer/
+          retention-days: 7
